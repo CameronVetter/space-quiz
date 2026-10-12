@@ -431,6 +431,17 @@
       letter-spacing: 0;
     }
 
+    .personal-best {
+      margin: -16px 0 26px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .personal-best strong {
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+
     .restart { min-width: 170px; }
 
     .footer-note {
@@ -539,6 +550,7 @@
       { question: "What keeps planets in orbit around the Sun?", answers: ["Magnetism", "Gravity", "Solar wind", "Atmospheric pressure"], correct: 1, fact: "The Sun's gravity bends each planet's path into a steady orbit." }
     ];
 
+    const PERSONAL_BEST_KEY = "orbit-personal-best";
     const quiz = document.querySelector("#quiz");
     let questionCount = document.querySelector("#question-count");
     let scoreDisplay = document.querySelector("#score");
@@ -552,6 +564,30 @@
     let score = 0;
     let selectedAnswer = null;
     let answered = false;
+
+    function getPersonalBest() {
+      try {
+        const storedBest = window.localStorage.getItem(PERSONAL_BEST_KEY);
+        if (storedBest === null || !/^\d+$/.test(storedBest)) return null;
+        const best = Number(storedBest);
+        return Number.isInteger(best) && best <= questions.length ? best : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function savePersonalBest(completedScore) {
+      const previousBest = getPersonalBest();
+      const best = previousBest === null ? completedScore : Math.max(previousBest, completedScore);
+      if (best !== previousBest) {
+        try {
+          window.localStorage.setItem(PERSONAL_BEST_KEY, String(best));
+        } catch {
+          // Keep the quiz playable when browser storage is unavailable.
+        }
+      }
+      return best;
+    }
 
     function renderQuestion() {
       const item = questions[currentQuestion];
@@ -631,6 +667,7 @@
     }
 
     function showResults() {
+      const personalBest = savePersonalBest(score);
       const percentage = score / questions.length;
       const result = percentage === 1
         ? { emoji: "🏆", title: "Out of this world!", copy: "A perfect mission. The cosmos has nothing left to hide from you." }
@@ -646,6 +683,7 @@
           <h1 tabindex="-1">${result.title}</h1>
           <p class="result-copy">${result.copy}</p>
           <div class="result-score"><span>${score}</span><span>/ ${questions.length} points</span></div>
+          <p class="personal-best">Personal best: <strong>${personalBest} / ${questions.length}</strong></p>
           <br>
           <button class="restart" type="button">Play again <span aria-hidden="true">↻</span></button>
         </div>`;
