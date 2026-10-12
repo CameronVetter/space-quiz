@@ -565,6 +565,8 @@
     let selectedAnswer = null;
     let answered = false;
 
+    let sessionPersonalBest = null;
+
     function getPersonalBest() {
       try {
         const storedBest = window.localStorage.getItem(PERSONAL_BEST_KEY);
@@ -577,13 +579,17 @@
     }
 
     function savePersonalBest(completedScore) {
-      const previousBest = getPersonalBest();
+      const storedBest = getPersonalBest();
+      const previousBest = storedBest === null
+        ? sessionPersonalBest
+        : Math.max(storedBest, sessionPersonalBest ?? storedBest);
       const best = previousBest === null ? completedScore : Math.max(previousBest, completedScore);
-      if (best !== previousBest) {
+      sessionPersonalBest = best;
+      if (best !== storedBest) {
         try {
           window.localStorage.setItem(PERSONAL_BEST_KEY, String(best));
         } catch {
-          // Keep the quiz playable when browser storage is unavailable.
+          // Keep the in-memory best when browser storage is unavailable.
         }
       }
       return best;
